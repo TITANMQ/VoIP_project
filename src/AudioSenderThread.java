@@ -3,21 +3,25 @@ import CMPC3M06.AudioRecorder;
 import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
 import java.net.*;
+import java.nio.ByteBuffer;
 
 public class AudioSenderThread implements Runnable {
 
     private DatagramSocket sendingSocket;
     private AudioRecorder recorder;
-    private int port = 55551;
+    private int port = 55555;
     private String hostname;
     private boolean running;
     private InetAddress clientIP;
+    private int totalPacketSent;
 
-    public AudioSenderThread(String hostname) {
+    public AudioSenderThread(String hostname, int port) {
         try {
+            this.port = port;
             this.hostname = hostname;
             running = false;
             recorder = new AudioRecorder();
+            totalPacketSent = 0;
         } catch (LineUnavailableException e) {
             e.printStackTrace();
             System.exit(0);
@@ -36,28 +40,37 @@ public class AudioSenderThread implements Runnable {
             e.printStackTrace();
         }
 
-        Thread thread = new Thread(this);
+    }
 
-        thread.start();
+    public void setRunning(boolean running) {
+        this.running = running;
     }
 
     @Override
     public void run() {
-        byte[] block;
+        start();
+        ByteBuffer packetData;
+        ;
         DatagramPacket packet;
         System.out.println("Recording voice ...");
-        while(running){
+        while (running) {
 
             try {
-                block = recorder.getBlock();
-                packet = new DatagramPacket(block, 0,512, clientIP, port);
+                packetData = ByteBuffer.allocate(512);
+                packetData.put(recorder.getBlock());
+
+                packet = new DatagramPacket(packetData.array(), 0, 512, clientIP, port);
+//                System.out.println("DATA(S): "  + Arrays.toString(packetData.array()) ); //Debug
                 sendingSocket.send(packet);
+                totalPacketSent++;
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-
         }
+    }
+
+    public int getTotalPacketSent() {
+        return totalPacketSent;
     }
 }

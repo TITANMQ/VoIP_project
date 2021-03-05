@@ -9,15 +9,19 @@ import java.net.SocketException;
 public class AudioReceiverThread implements Runnable {
 
     private boolean running;
-    private int port = 55551;
+    private int port;
     private DatagramSocket receivingSocket;
     private AudioPlayer player;
+    private int totalPacketReceived;
 
-    public AudioReceiverThread() {
+    public AudioReceiverThread(int port) {
+        this.port = port;
         this.running = false;
+        totalPacketReceived = 0;
     }
 
-    public void start(){
+
+    public void start() {
         running = true;
 
         try {
@@ -32,15 +36,12 @@ public class AudioReceiverThread implements Runnable {
             System.exit(0);
         }
 
-        Thread thread = new Thread(this);
-
-        thread.start();
-
     }
 
 
     @Override
     public void run() {
+        start();
         DatagramPacket packet;
 
         while (running){
@@ -51,13 +52,24 @@ public class AudioReceiverThread implements Runnable {
                 packet = new DatagramPacket(buffer, 0, 512);
 
                 receivingSocket.receive(packet);
+                totalPacketReceived++;
 
                 player.playBlock(packet.getData());
+//                System.out.println("DATA(R): " + Arrays.toString(packet.getData())); //debug
+
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
         }
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
+    }
+
+    public int getTotalPacketReceived() {
+        return totalPacketReceived;
     }
 }

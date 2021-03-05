@@ -1,11 +1,24 @@
+
 public class VoIPDuplex {
 
     public static void main(String[] args) {
 
-        AudioReceiverThread receiverThread = new AudioReceiverThread();
-        AudioSenderThread senderThread = new AudioSenderThread("localhost");
+        int port = 55555;
+        AudioReceiverThread receiver = new AudioReceiverThread(port);
+        AudioSenderThread sender = new AudioSenderThread("localhost", port);
 
-        receiverThread.start();
+        Thread receiverThread = new Thread(receiver);
+        Thread senderThread = new Thread(sender);
+
         senderThread.start();
+        receiverThread.start();
+
+        try {
+            senderThread.join();
+            receiverThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 }
