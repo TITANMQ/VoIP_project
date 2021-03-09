@@ -1,2 +1,9 @@
 # Project exclude paths
 /out/
+
+# .wav out files
+*.wav
+
+*.iml
+
+.idea/libraries
