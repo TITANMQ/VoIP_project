@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 
 public class AudioReceiverThread implements Runnable {
 
@@ -49,12 +50,22 @@ public class AudioReceiverThread implements Runnable {
             try {
 
                 byte[] buffer = new byte[512];
+                ByteBuffer unwrapDecrypt = ByteBuffer.allocate(buffer.length);
                 packet = new DatagramPacket(buffer, 0, 512);
 
                 receivingSocket.receive(packet);
                 totalPacketReceived++;
+                
+                ByteBuffer cipherText = ByteBuffer.wrap(buffer);
+                for(int i = 0; i < buffer.length/4; i++){
+                    int fourByte = cipherText.getInt();
+                    fourByte = fourByte ^ key;
+                    unwrapDecrypt.putInt(fourByte);
+                }
 
-                player.playBlock(packet.getData());
+                byte[] decryptedBlock = unwrapDecrypt.array();
+
+                player.playBlock(decryptedBlock);
 //                System.out.println("DATA(R): " + Arrays.toString(packet.getData())); //debug
 
 
