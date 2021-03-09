@@ -11,7 +11,9 @@ public class AudioReceiverThread implements Runnable {
 
     private boolean running;
     private int port;
-    private DatagramSocket receivingSocket;
+    private DatagramSocket socket1;
+    private DatagramSocket socket2;
+    private DatagramSocket socket3;
     private AudioPlayer player;
     private int totalPacketReceived;
 
@@ -26,7 +28,9 @@ public class AudioReceiverThread implements Runnable {
         running = true;
 
         try {
-            receivingSocket = new DatagramSocket(port);
+            socket1 = new DatagramSocket(port);
+            // socket2 = new DatagramSocket(port);
+            // socket3 = new DatagramSocket(port);
             player = new AudioPlayer();
         } catch (SocketException e) {
             System.out.println("ERROR: TextReceiver: Could not open UDP socket to receive from.");
@@ -44,26 +48,22 @@ public class AudioReceiverThread implements Runnable {
     public void run() {
         start();
         DatagramPacket packet;
+        int key = 15;
 
         while (running){
 
             try {
 
                 byte[] buffer = new byte[512];
-                ByteBuffer unwrapDecrypt = ByteBuffer.allocate(buffer.length);
+                
                 packet = new DatagramPacket(buffer, 0, 512);
 
-                receivingSocket.receive(packet);
+                socket1.receive(packet);
+                // socket2.receive(packet);
+                // socket3.receive(packet);
                 totalPacketReceived++;
-                
-                ByteBuffer cipherText = ByteBuffer.wrap(buffer);
-                for(int i = 0; i < buffer.length/4; i++){
-                    int fourByte = cipherText.getInt();
-                    fourByte = fourByte ^ key;
-                    unwrapDecrypt.putInt(fourByte);
-                }
 
-                byte[] decryptedBlock = unwrapDecrypt.array();
+                byte[] decryptedBlock = decryptData(buffer, key);
 
                 player.playBlock(decryptedBlock);
 //                System.out.println("DATA(R): " + Arrays.toString(packet.getData())); //debug
@@ -74,6 +74,19 @@ public class AudioReceiverThread implements Runnable {
             }
 
         }
+    }
+    
+    public byte[] decryptData(byte[] data, int key){
+        ByteBuffer unwrapDecrypt = ByteBuffer.allocate(data.length);
+        ByteBuffer cypherText =  ByteBuffer.wrap(data);
+
+        for(int j = 0; j < data.length/4; j++){
+            int fourByte = cypherText.getInt();
+            fourByte = fourByte ^ key; //XOR operation with key
+            unwrapDecrypt.putInt(fourByte);
+        }
+
+        return unwrapDecrypt.array();
     }
 
     public void setRunning(boolean running) {
