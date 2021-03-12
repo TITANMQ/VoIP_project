@@ -4,8 +4,8 @@ import CMPC3M06.AudioPlayer;
 
 import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
+import java.net.DatagramPacket2;
+
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 
@@ -13,9 +13,7 @@ public class AudioReceiverThread implements Runnable {
 
     private boolean running;
     private int port;
-    private DatagramSocket socket1;
-    private DatagramSocket socket2;
-    private DatagramSocket socket3;
+    private DatagramSocket socket2; 
     private AudioPlayer player;
     private int totalPacketReceived;
 
@@ -51,6 +49,7 @@ public class AudioReceiverThread implements Runnable {
         start();
         DatagramPacket packet;
         int key = 15;
+        Object[] packetArray = new Object[16];
 
         while (running){
 
@@ -58,17 +57,19 @@ public class AudioReceiverThread implements Runnable {
 
                 byte[] buffer = new byte[512];
                 
-                packet = new DatagramPacket(buffer, 0, 512);
-
-                socket1.receive(packet);
-                // socket2.receive(packet);
-                // socket3.receive(packet);
-                totalPacketReceived++;
-
-                byte[] decryptedBlock = decryptData(buffer, key);
-
-                player.playBlock(decryptedBlock);
-//                System.out.println("DATA(R): " + Arrays.toString(packet.getData())); //debug
+                for(int i = 0; i < 17; i++){
+                    packet = new DatagramPacket(buffer, 0, 512);
+                    socket2.receive(packet);
+                    totalPacketReceived++;
+                    packetArray[i] = packet;
+                }
+                
+                packetArray = Utility.deInterleave(packetArray);
+                
+                for(int k = 0; k < 17; k++){
+                    byte[] decryptedBlock = decryptData(packetArray[i].getData(), key);
+                    player.playBlock(decryptedBlock);
+                }
 
 
             } catch (IOException e) {
