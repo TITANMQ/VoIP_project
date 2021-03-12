@@ -1,6 +1,8 @@
 package system_2;
 
 import CMPC3M06.AudioRecorder;
+import supportClasses.Utility;
+import uk.ac.uea.cmp.voip.DatagramSocket2;
 
 import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
@@ -9,7 +11,7 @@ import java.nio.ByteBuffer;
 
 public class AudioSenderThread implements Runnable {
 
-    private DatagramSocket sendingSocket;
+    private DatagramSocket2 sendingSocket;
     private AudioRecorder recorder;
     private int port = 55555;
     private String hostname;
@@ -36,7 +38,7 @@ public class AudioSenderThread implements Runnable {
         clientIP = null;
         try {
             clientIP = InetAddress.getByName(hostname);
-            sendingSocket = new DatagramSocket();
+            sendingSocket = new DatagramSocket2();
 
         } catch (UnknownHostException | SocketException e) {
             e.printStackTrace();
@@ -54,22 +56,36 @@ public class AudioSenderThread implements Runnable {
         byte[] block;
         ByteBuffer packetData;
         int key = 15;
+        Object[] transmitPackets = new Object[16];
 
         DatagramPacket packet;
         System.out.println("Recording voice ...");
         while (running) {
 
             try {
-                block = recorder.getBlock();
+                for(int i = 0; i < 17; i++){
 
-                packetData = ByteBuffer.allocate(512);
-//                packetData.put(block); unencrypted block data
-                packetData.put(encryptData(block, key)); //encrypted block data
+                    block = recorder.getBlock();
 
-                packet = new DatagramPacket(packetData.array(), 0, 512, clientIP, port);
-//                System.out.println("DATA(S): "  + Arrays.toString(packetData.array()) ); //Debug
-                sendingSocket.send(packet);
-                totalPacketSent++;
+                    packetData = ByteBuffer.allocate(512);
+//                  packetData.put(block); unencrypted block data
+                    packetData.put(encryptData(block, key)); //encrypted block data
+                    //add sequence number to header
+
+                    packet = new DatagramPacket(packetData.array(), 0, 512, clientIP, port);
+//                  System.out.println("DATA(S): "  + Arrays.toString(packetData.array()) ); //Debug
+
+                    transmitPackets[i] = packet;
+
+                }
+
+                transmitPackets = Utility.blockInterleave(transmitPackets);
+
+                //loop through the array and send each packet
+                for(int k = 0; k < 17; k++){
+                    sendingSocket.send(((DatagramPacket) transmitPackets[k]));
+                    totalPacketSent++;
+                }
 
             } catch (IOException e) {
                 e.printStackTrace();
