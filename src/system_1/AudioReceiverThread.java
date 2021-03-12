@@ -1,3 +1,5 @@
+package system_1;
+
 import CMPC3M06.AudioPlayer;
 
 import javax.sound.sampled.LineUnavailableException;
