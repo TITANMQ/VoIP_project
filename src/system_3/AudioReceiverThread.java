@@ -5,7 +5,7 @@ import CMPC3M06.AudioPlayer;
 import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
+import uk.ac.uea.cmp.voip.DatagramSocket3;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 
@@ -13,9 +13,7 @@ public class AudioReceiverThread implements Runnable {
 
     private boolean running;
     private int port;
-    private DatagramSocket socket1;
-    private DatagramSocket socket2;
-    private DatagramSocket socket3;
+    private DatagramSocket3 socket3;
     private AudioPlayer player;
     private int totalPacketReceived;
 
@@ -30,9 +28,7 @@ public class AudioReceiverThread implements Runnable {
         running = true;
 
         try {
-            socket1 = new DatagramSocket(port);
-            // socket2 = new DatagramSocket(port);
-            // socket3 = new DatagramSocket(port);
+            socket3 = new DatagramSocket3(port);
             player = new AudioPlayer();
         } catch (SocketException e) {
             System.out.println("ERROR: TextReceiver: Could not open UDP socket to receive from.");
@@ -51,24 +47,28 @@ public class AudioReceiverThread implements Runnable {
         start();
         DatagramPacket packet;
         int key = 15;
+        Object[] packetArray = new Object[16];
 
         while (running) {
 
             try {
 
                 byte[] buffer = new byte[512];
+                
+                for(int i = 0; i < 17; i++){
+                    packet = new DatagramPacket(buffer, 0, 512);
+                    socket3.receive(packet);
+                    totalPacketReceived++;
+                    packetArray[i] = packet;
+                }
+                
+                packetArray = deInterleave(packetArray);
+                
+                for(int k = 0; k < 17; k++){
+                    byte[] decryptedBlock = decryptData(packetArray[k].getData(), key);
+                     player.playBlock(decryptedBlock);
 
-                packet = new DatagramPacket(buffer, 0, 512);
-
-                socket1.receive(packet);
-                // socket2.receive(packet);
-                // socket3.receive(packet);
-                totalPacketReceived++;
-
-                byte[] decryptedBlock = decryptData(buffer, key);
-
-                player.playBlock(decryptedBlock);
-//                System.out.println("DATA(R): " + Arrays.toString(packet.getData())); //debug
+                }
 
 
             } catch (IOException e) {
