@@ -22,6 +22,13 @@ public class Utility {
         }
         return result;
     }
+    
+    public static Object[] deInterleave(Object[] b){
+        for(int i =0; i < 3; i++){
+            b = blockInterleave(b);
+        }
+        return b;
+    }
 
 
     //test harness
