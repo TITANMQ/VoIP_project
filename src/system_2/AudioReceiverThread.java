@@ -1,13 +1,15 @@
 package system_2;
 
 import CMPC3M06.AudioPlayer;
+import supportClasses.Utility;
+import uk.ac.uea.cmp.voip.DatagramSocket2;
 
 import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
 import java.net.DatagramPacket;
-import uk.ac.uea.cmp.voip.DatagramSocket2;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class AudioReceiverThread implements Runnable {
 
@@ -47,29 +49,41 @@ public class AudioReceiverThread implements Runnable {
         start();
         DatagramPacket packet;
         int key = 15;
-        Object[] packetArray = new Object[16];
+        Object[] packetArray = new DatagramPacket[16];
 
         while (running){
 
             try {
 
-                byte[] buffer = new byte[512];
-                
-                for(int i = 0; i < 17; i++){
-                    packet = new DatagramPacket(buffer, 0, 512);
+                ByteBuffer packetData;
+                byte[] buffer;
+//                short seqNum;
+
+                for (int i = 0; i < 16; i++) {
+                    buffer = new byte[514];
+                    packet = new DatagramPacket(buffer, 0, 514);
                     socket2.receive(packet);
+
                     packetArray[i] = packet;
-                                       
-                }
-                
-                packetArray = Utility.deInterleave(packetArray);
-                
-                for(int k = 0; k < 17; k++){
-                    byte[] decryptedBlock = decryptData(packetArray[k].getData(), key);
-                    player.playBlock(decryptedBlock);
+                    totalPacketReceived++;
+
                 }
 
+                if (totalPacketReceived % 16 == 0) {
+                    packetArray = Utility.deInterleave(packetArray);
 
+                    for (int k = 0; k < 16; k++) {
+
+                        packet = (DatagramPacket) packetArray[k];
+                        packetData = ByteBuffer.wrap(packet.getData());
+//                        seqNum = packetData.getShort(0);
+////                        System.out.println("Packet " + seqNum); //debug
+                        byte[] block = Arrays.copyOfRange(packetData.array(), 2, 514);
+                        block = decryptData(block, key);
+
+                        player.playBlock(block);
+                    }
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }

@@ -6,7 +6,10 @@ import uk.ac.uea.cmp.voip.DatagramSocket2;
 
 import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
 public class AudioSenderThread implements Runnable {
@@ -57,23 +60,26 @@ public class AudioSenderThread implements Runnable {
         ByteBuffer packetData;
         int key = 15;
         Object[] transmitPackets = new Object[16];
+        short seqNum;
 
         DatagramPacket packet;
         System.out.println("Recording voice ...");
         while (running) {
 
             try {
-                for(int i = 0; i < 17; i++){
+                for (int i = 0; i < 16; i++) {
 
+                    seqNum = (short) i;
                     block = recorder.getBlock();
 
-                    packetData = ByteBuffer.allocate(512);
-//                  packetData.put(block); unencrypted block data
+                    packetData = ByteBuffer.allocate(514); //+2 bytes seqnum
+//                    packetData.put(block); // unencrypted block data
+                    packetData.putShort(seqNum);     //add sequence number to header
                     packetData.put(encryptData(block, key)); //encrypted block data
-                    //add sequence number to header
 
-                    packet = new DatagramPacket(packetData.array(), 0, 512, clientIP, port);
-//                  System.out.println("DATA(S): "  + Arrays.toString(packetData.array()) ); //Debug
+
+                    packet = new DatagramPacket(packetData.array(), 0, 514, clientIP, port);
+//                  System.out.println("Sender packet:  " + seqNum + " data: " + Arrays.toString(packetData.array()) ); //Debug
 
                     transmitPackets[i] = packet;
 
@@ -82,7 +88,7 @@ public class AudioSenderThread implements Runnable {
                 transmitPackets = Utility.blockInterleave(transmitPackets);
 
                 //loop through the array and send each packet
-                for(int k = 0; k < 17; k++){
+                for (int k = 0; k < 16; k++) {
                     sendingSocket.send(((DatagramPacket) transmitPackets[k]));
                     totalPacketSent++;
                 }
