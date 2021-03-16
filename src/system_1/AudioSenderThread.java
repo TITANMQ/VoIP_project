@@ -64,7 +64,7 @@ public class AudioSenderThread implements Runnable {
 
                 packetData = ByteBuffer.allocate(512);
 //                packetData.put(block); unencrypted block data
-                packetData.put(encryptData(block, key)); //encrypted block data
+                packetData.put(Utility.encryptData(block, key)); //encrypted block data
 
                 packet = new DatagramPacket(packetData.array(), 0, 512, clientIP, port);
 //                System.out.println("DATA(S): "  + Arrays.toString(packetData.array()) ); //Debug
@@ -77,24 +77,6 @@ public class AudioSenderThread implements Runnable {
         }
     }
 
-    /**
-     * Encrypts data using a 32 bit XOR operation
-     * @param data unencrypted data
-     * @param key integer key
-     * @return encrypted data
-     */
-    public byte[] encryptData(byte[] data, int key){
-        ByteBuffer unwrapEncrypt = ByteBuffer.allocate(data.length);
-        ByteBuffer plainText =  ByteBuffer.wrap(data);
-
-        for(int j = 0; j < data.length/4; j++){
-            int fourByte = plainText.getInt();
-            fourByte = fourByte ^ key; //XOR operation with key
-            unwrapEncrypt.putInt(fourByte);
-        }
-
-        return unwrapEncrypt.array();
-    }
 
     public int getTotalPacketSent() {
         return totalPacketSent;
