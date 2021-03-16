@@ -29,6 +29,34 @@ public class Utility {
         }
         return b;
     }
+    
+    
+    public byte[] decryptData(byte[] data, int key){
+        ByteBuffer unwrapDecrypt = ByteBuffer.allocate(data.length);
+        ByteBuffer cypherText =  ByteBuffer.wrap(data);
+
+        for(int j = 0; j < data.length/4; j++){
+            int fourByte = cypherText.getInt();
+            fourByte = fourByte ^ key; //XOR operation with key
+            unwrapDecrypt.putInt(fourByte);
+        }
+
+        return unwrapDecrypt.array();
+    }
+    
+    
+    public byte[] encryptData(byte[] data, int key){
+        ByteBuffer unwrapEncrypt = ByteBuffer.allocate(data.length);
+        ByteBuffer plainText =  ByteBuffer.wrap(data);
+
+        for(int j = 0; j < data.length/4; j++){
+            int fourByte = plainText.getInt();
+            fourByte = fourByte ^ key; //XOR operation with key
+            unwrapEncrypt.putInt(fourByte);
+        }
+
+        return unwrapEncrypt.array();
+    }
 
 
     //test harness
