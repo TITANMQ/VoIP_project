@@ -79,7 +79,6 @@ public class AudioReceiverThread implements Runnable {
 //                        seqNum = packetData.getShort(0);
 ////                        System.out.println("Packet " + seqNum); //debug
                         byte[] block = Arrays.copyOfRange(packetData.array(), 2, 514);
-                        block = decryptData(block, key);
 
                         player.playBlock(block);
                     }
