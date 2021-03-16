@@ -14,8 +14,6 @@ public class AudioReceiverThread implements Runnable {
     private boolean running;
     private int port;
     private DatagramSocket socket1;
-    private DatagramSocket socket2;
-    private DatagramSocket socket3;
     private AudioPlayer player;
     private int totalPacketReceived;
 
@@ -61,11 +59,9 @@ public class AudioReceiverThread implements Runnable {
                 packet = new DatagramPacket(buffer, 0, 512);
 
                 socket1.receive(packet);
-                // socket2.receive(packet);
-                // socket3.receive(packet);
                 totalPacketReceived++;
 
-                byte[] decryptedBlock = decryptData(buffer, key);
+                byte[] decryptedBlock = Utility.decryptData(buffer, key);
 
                 player.playBlock(decryptedBlock);
 //                System.out.println("DATA(R): " + Arrays.toString(packet.getData())); //debug
