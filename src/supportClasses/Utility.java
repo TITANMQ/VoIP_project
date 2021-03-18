@@ -31,7 +31,7 @@ public class Utility {
     }
     
     
-    public byte[] decryptData(byte[] data, int key){
+    public static byte[] decryptData(byte[] data, int key){
         ByteBuffer unwrapDecrypt = ByteBuffer.allocate(data.length);
         ByteBuffer cypherText =  ByteBuffer.wrap(data);
 
@@ -45,7 +45,7 @@ public class Utility {
     }
     
     
-    public byte[] encryptData(byte[] data, int key){
+    public static byte[] encryptData(byte[] data, int key){
         ByteBuffer unwrapEncrypt = ByteBuffer.allocate(data.length);
         ByteBuffer plainText =  ByteBuffer.wrap(data);
 
