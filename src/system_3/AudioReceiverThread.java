@@ -1,16 +1,15 @@
 package system_3;
 
 import CMPC3M06.AudioPlayer;
+import uk.ac.uea.cmp.voip.DatagramSocket3;
 
 import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
 import java.net.DatagramPacket;
-
-import supportClasses.Utility;
-import uk.ac.uea.cmp.voip.DatagramSocket3;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Comparator;
 
 public class AudioReceiverThread implements Runnable {
 
@@ -19,6 +18,7 @@ public class AudioReceiverThread implements Runnable {
     private AudioPlayer player;
     private int totalPacketReceived;
     private DatagramSocket3 socket3;
+    private final int sendTotal = 16;
 
     public AudioReceiverThread(int port) {
         this.port = port;
@@ -50,7 +50,7 @@ public class AudioReceiverThread implements Runnable {
         start();
         DatagramPacket packet;
         int key = 15;
-        Object[] packetArray = new DatagramPacket[16];
+        Object[] packetArray = new DatagramPacket[sendTotal];
 
         while (running){
 
@@ -60,7 +60,7 @@ public class AudioReceiverThread implements Runnable {
                 byte[] buffer;
 //                short seqNum;
 
-                for (int i = 0; i < 16; i++) {
+                for (int i = 0; i < sendTotal; i++) {
                     buffer = new byte[514];
                     packet = new DatagramPacket(buffer, 0, 514);
                     socket3.receive(packet);
@@ -70,17 +70,29 @@ public class AudioReceiverThread implements Runnable {
 
                 }
 
-                if (totalPacketReceived % 16 == 0) {
-                    packetArray = Utility.deInterleave(packetArray);
+                if (totalPacketReceived % sendTotal == 0) {
 
-                    for (int k = 0; k < 16; k++) {
+                    Comparator<DatagramPacket> bySeq =
+                            (DatagramPacket packet1, DatagramPacket packet2) -> {
+                                ByteBuffer packetData1 = ByteBuffer.wrap(packet1.getData());
+                                short seqNum1 = packetData1.getShort(0);
+
+                                ByteBuffer packetData2 = ByteBuffer.wrap(packet2.getData());
+                                short seqNum2 = packetData2.getShort(0);
+
+                                return Integer.compare(seqNum1, seqNum2);
+                            };
+
+                    Arrays.sort((DatagramPacket[]) packetArray, bySeq);
+
+                    for (int k = 0; k < sendTotal; k++) {
 
                         packet = (DatagramPacket) packetArray[k];
                         packetData = ByteBuffer.wrap(packet.getData());
 //                        seqNum = packetData.getShort(0);
 ////                        System.out.println("Packet " + seqNum); //debug
                         byte[] block = Arrays.copyOfRange(packetData.array(), 2, 514);
-                 
+
 
                         player.playBlock(block);
                     }
