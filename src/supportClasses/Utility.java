@@ -1,5 +1,6 @@
 package supportClasses;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class Utility {
@@ -7,7 +8,7 @@ public class Utility {
 
     public static Object[] blockInterleave(Object [] b){
         Object[] result = new Object[b.length];
-        int d = 4; //TODO change this from hardcoded
+        int d = (int) Math.sqrt(b.length);
         int c = 0;
 
         for(int i = 0; i < d; i++) {
@@ -22,14 +23,6 @@ public class Utility {
         }
         return result;
     }
-    
-    public static Object[] deInterleave(Object[] b){
-        for(int i =0; i < 3; i++){
-            b = blockInterleave(b);
-        }
-        return b;
-    }
-    
     
     public static byte[] decryptData(byte[] data, int key){
         ByteBuffer unwrapDecrypt = ByteBuffer.allocate(data.length);
