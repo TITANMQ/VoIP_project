@@ -17,6 +17,7 @@ public class AudioSenderThread implements Runnable {
     private boolean running;
     private InetAddress clientIP;
     private int totalPacketSent;
+    private static final int PACKET_SIZE = 514; // authKey(2) + block(512)
 
     public AudioSenderThread(String hostname, int port) {
         try {
@@ -54,7 +55,8 @@ public class AudioSenderThread implements Runnable {
         start();
         byte[] block;
         ByteBuffer packetData;
-        int key = 15;
+        int encryptionKey = 15;
+        short authenticationKey = 10;
 
         DatagramPacket packet;
         System.out.println("Recording voice ...");
@@ -63,11 +65,12 @@ public class AudioSenderThread implements Runnable {
             try {
                 block = recorder.getBlock();
 
-                packetData = ByteBuffer.allocate(512);
+                packetData = ByteBuffer.allocate(PACKET_SIZE);
 //                packetData.put(block); unencrypted block data
-                packetData.put(Utility.encryptData(block, key)); //encrypted block data
+                packetData.putShort(authenticationKey); //add auth key
+                packetData.put(Utility.encryptData(block, encryptionKey)); //encrypted block data
 
-                packet = new DatagramPacket(packetData.array(), 0, 512, clientIP, port);
+                packet = new DatagramPacket(packetData.array(), 0, PACKET_SIZE, clientIP, port);
 //                System.out.println("DATA(S): "  + Arrays.toString(packetData.array()) ); //Debug
                 sendingSocket.send(packet);
                 totalPacketSent++;

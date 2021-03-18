@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class AudioReceiverThread implements Runnable {
 
@@ -16,6 +18,7 @@ public class AudioReceiverThread implements Runnable {
     private DatagramSocket socket1;
     private AudioPlayer player;
     private int totalPacketReceived;
+    private static final int PACKET_SIZE = 514; // authKey(2) + block(512)
 
     public AudioReceiverThread(int port) {
         this.port = port;
@@ -47,22 +50,33 @@ public class AudioReceiverThread implements Runnable {
         start();
         DatagramPacket packet;
         int key = 15;
+        short authenticationKey = 10;
+        ByteBuffer packetData;
+        byte[] block;
 
-        while (running){
+
+        while (running) {
 
             try {
 
-                byte[] buffer = new byte[512];
-                
-                packet = new DatagramPacket(buffer, 0, 512);
+                byte[] buffer = new byte[PACKET_SIZE];
+
+                packet = new DatagramPacket(buffer, 0, PACKET_SIZE);
 
                 socket1.receive(packet);
-                totalPacketReceived++;
 
-                byte[] decryptedBlock = Utility.decryptData(buffer, key);
+                packetData = ByteBuffer.wrap(buffer);
 
-                player.playBlock(decryptedBlock);
-//                System.out.println("DATA(R): " + Arrays.toString(packet.getData())); //debug
+                short receivedAuthKey = packetData.getShort(0);
+
+                if (receivedAuthKey == authenticationKey) {
+
+                    block = Arrays.copyOfRange(packetData.array(), 2, 514);
+                    block = Utility.decryptData(block, key);
+                    totalPacketReceived++;
+//                    System.out.println("DATA(R): " + Arrays.toString(packet.getData())); //debug
+                    player.playBlock(block);
+                }
 
 
             } catch (IOException e) {
