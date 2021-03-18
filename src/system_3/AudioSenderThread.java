@@ -70,8 +70,8 @@ public class AudioSenderThread implements Runnable {
                     block = recorder.getBlock();
 
                     packetData = ByteBuffer.allocate(514); //+2 bytes seqnum
-                    packetData.put(block); // unencrypted block data
                     packetData.putShort(seqNum);     //add sequence number to header
+                    packetData.put(block); // unencrypted block data
               
                     packet = new DatagramPacket(packetData.array(), 0, 514, clientIP, port);
 //                  System.out.println("Sender packet:  " + seqNum + " data: " + Arrays.toString(packetData.array()) ); //Debug
