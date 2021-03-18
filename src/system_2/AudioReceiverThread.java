@@ -90,18 +90,7 @@ public class AudioReceiverThread implements Runnable {
         }
     }
     
-    public byte[] decryptData(byte[] data, int key){
-        ByteBuffer unwrapDecrypt = ByteBuffer.allocate(data.length);
-        ByteBuffer cypherText =  ByteBuffer.wrap(data);
 
-        for(int j = 0; j < data.length/4; j++){
-            int fourByte = cypherText.getInt();
-            fourByte = fourByte ^ key; //XOR operation with key
-            unwrapDecrypt.putInt(fourByte);
-        }
-
-        return unwrapDecrypt.array();
-    }
 
     public void setRunning(boolean running) {
         this.running = running;
